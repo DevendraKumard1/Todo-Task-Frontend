@@ -2,7 +2,7 @@ import ApiService from "./ApiService";
 
 class AssigneeService {
   getAssignee(queryString) {
-    let endPoint = "assignee" + (queryString ? '?' + queryString : '');
+    let endPoint = "todos/assignee" + (queryString ? '?' + queryString : '');
     let addditionalHeaderData = {};
     let postData = {};
 
