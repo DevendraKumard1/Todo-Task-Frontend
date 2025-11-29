@@ -1,35 +1,110 @@
 import ApiService from "./ApiService";
 
 class ToDoService {
-    getTodos(queryString) {
-        let endPoint = "" + (queryString ? '?' + queryString : '');
-        let addditionalHeaderData = {};
-        let postData = {};
+  /**
+   * Fetch todos with optional query parameters
+   * @param {string} queryString - URL query parameters (e.g., "status=pending&limit=10")
+   * @returns {Promise}
+   */
+  getTodos(queryString = "") {
+    const endPoint = "todos" + (queryString ? `?${queryString}` : "");
+    const inputData = {
+      endPoint: endPoint,
+      addditionalHeaderData: {}, // Add headers if needed
+      postData: {}, // GET request, no body
+    };
+    return ApiService.getCall(inputData);
+  }
 
-        let inputData = {
-            endPoint: endPoint,
-            addditionalHeaderData: addditionalHeaderData,
-            postData: postData,
-        };
+  /**
+   * Get list of assignees
+   * @returns {Promise}
+   */
+  listAssignee() {
+    const endPoint = "todos/assignee";
+    const inputData = {
+      endPoint: endPoint,
+      addditionalHeaderData: {},
+      postData: {},
+    };
+    return ApiService.getCall(inputData);
+  }
 
-        let response = ApiService.getCall(inputData);
-        return response;
-    }
+  /**
+   * Create a new todo
+   * @param {Object} data - Todo data
+   * @returns {Promise}
+   */
+  createTodo(data) {
+    const endPoint = "todos"; // matches POST "/todos"
+    const inputData = {
+      endPoint: endPoint,
+      addditionalHeaderData: {},
+      postData: data,
+    };
+    return ApiService.postCall(inputData);
+  }
 
-    createTodo(data) {
-        let endPoint = "todo";
-        let addditionalHeaderData = {};
-        let postData = data;
+  /**
+   * Get a specific todo by ID
+   * @param {number} todo_id
+   * @returns {Promise}
+   */
+  getTodoById(todo_id) {
+    const endPoint = `todos/${todo_id}`;
+    const inputData = {
+      endPoint: endPoint,
+      addditionalHeaderData: {},
+      postData: {},
+    };
+    return ApiService.getCall(inputData);
+  }
 
-        let inputData = {
-            endPoint: endPoint,
-            addditionalHeaderData: addditionalHeaderData,
-            postData: postData,
-        };
+  /**
+   * Update a todo by ID
+   * @param {number} todo_id
+   * @param {Object} data
+   * @returns {Promise}
+   */
+  updateTodo(todo_id, data) {
+    const endPoint = `todos/${todo_id}`;
+    const inputData = {
+      endPoint: endPoint,
+      addditionalHeaderData: {},
+      postData: data,
+    };
+    return ApiService.putCall(inputData);
+  }
 
-        let response = ApiService.postCall(inputData);
+  /**
+   * Soft delete a todo by ID
+   * @param {number} todo_id
+   * @returns {Promise}
+   */
+  deleteTodo(todo_id) {
+    const endPoint = `todos/${todo_id}`;
+    const inputData = {
+      endPoint: endPoint,
+      addditionalHeaderData: {},
+      postData: {},
+    };
+    return ApiService.deleteCall(inputData);
+  }
 
-        return response;
-    }
+  /**
+   * Revoke (undo delete) a todo
+   * @param {number} todo_id
+   * @returns {Promise}
+   */
+  revokeTodo(todo_id) {
+    const endPoint = `todos/${todo_id}/revoke`;
+    const inputData = {
+      endPoint: endPoint,
+      addditionalHeaderData: {},
+      postData: {},
+    };
+    return ApiService.putCall(inputData);
+  }
 }
+
 export default new ToDoService();
