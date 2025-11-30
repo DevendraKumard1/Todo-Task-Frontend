@@ -10,7 +10,7 @@ import {
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-import ucFirst from "./Utils";
+import {dateFormat, statusBadge} from "./Utils";
 
 function TodoList() {
   const [showModal, setShowModal] = useState(false);
@@ -29,6 +29,7 @@ function TodoList() {
     scheduledDateFilter: "",
   });
 
+  const [showFilters, setShowFilters] = useState(false);
   const [editTodo, setEditTodo] = useState(null);
   const [editMode, setEditMode] = useState(false);
 
@@ -178,89 +179,92 @@ function TodoList() {
             </button>
           </div>
         </div>
-
-        {/* Filters */}
-        <div className="row g-3 p-3">
-          <div className="col-md-4">
-            <label>Title</label>
-            <input
-              type="text"
-              className="form-control"
-              value={filter.titleFilter}
-              onChange={(e) =>
-                setFilter({ ...filter, titleFilter: e.target.value })
-              }
-            />
-          </div>
-
-          <div className="col-md-4">
-            <label>Assignee</label>
-            <select
-              className="form-control"
-              value={filter.assigneeFilter}
-              onChange={(e) =>
-                setFilter({ ...filter, assigneeFilter: e.target.value })
-              }
-            >
-              <option value="">--Select--</option>
-              {assignee.map((a) => (
-                <option key={a.id} value={a.id}>{a.username}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="col-md-4">
-            <label>Status</label>
-            <select
-              className="form-control"
-              value={filter.statusFilter}
-              onChange={(e) =>
-                setFilter({ ...filter, statusFilter: e.target.value })
-              }
-            >
-              <option value="">--Select--</option>
-              <option value="pending">Pending</option>
-              <option value="in_progress">In Progress</option>
-              <option value="hold">Hold</option>
-              <option value="completed">Completed</option>
-            </select>
-          </div>
-
-          <div className="col-md-4">
-            <label>Priority</label>
-            <select
-              className="form-control"
-              value={filter.priorityFilter}
-              onChange={(e) =>
-                setFilter({ ...filter, priorityFilter: e.target.value })
-              }
-            >
-              <option value="">--Select--</option>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
-            </select>
-          </div>
-
-          <div className="col-md-4">
-            <label>Scheduled Date</label>
-            <input
-              type="date"
-              className="form-control"
-              value={filter.scheduledDateFilter}
-              onChange={(e) =>
-                setFilter({ ...filter, scheduledDateFilter: e.target.value })
-              }
-            />
-          </div>
-
-          <div className="col-md-4 d-flex align-items-end">
-            <button className="btn btn-secondary w-100" onClick={handleReset}>
-              Reset
-            </button>
-          </div>
+        <div className="p-3">
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => setShowFilters(prev => !prev)}
+          >
+            {showFilters ? "Hide Filters" : "Show Filters"}
+          </button>
         </div>
-
+        {showFilters && (
+          <div className="row g-3 p-3">
+            <div className="col-md-4">
+              <label>Title</label>
+              <input
+                type="text"
+                className="form-control"
+                value={filter.titleFilter}
+                onChange={(e) =>
+                  setFilter({ ...filter, titleFilter: e.target.value })
+                }
+              />
+            </div>
+            <div className="col-md-4">
+              <label>Assignee</label>
+              <select
+                className="form-control"
+                value={filter.assigneeFilter}
+                onChange={(e) =>
+                  setFilter({ ...filter, assigneeFilter: e.target.value })
+                }
+              >
+                <option value="">--Select--</option>
+                {assignee.map((a) => (
+                  <option key={a.id} value={a.id}>{a.username}</option>
+                ))}
+              </select>
+            </div>
+            <div className="col-md-4">
+              <label>Status</label>
+              <select
+                className="form-control"
+                value={filter.statusFilter}
+                onChange={(e) =>
+                  setFilter({ ...filter, statusFilter: e.target.value })
+                }
+              >
+                <option value="">--Select--</option>
+                <option value="pending">Pending</option>
+                <option value="in_progress">In Progress</option>
+                <option value="hold">Hold</option>
+                <option value="completed">Completed</option>
+                <option value="revoked">Revoked</option>
+              </select>
+            </div>
+            <div className="col-md-4">
+              <label>Priority</label>
+              <select
+                className="form-control"
+                value={filter.priorityFilter}
+                onChange={(e) =>
+                  setFilter({ ...filter, priorityFilter: e.target.value })
+                }
+              >
+                <option value="">--Select--</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+            </div>
+            <div className="col-md-4">
+              <label>Scheduled Date</label>
+              <input
+                type="date"
+                className="form-control"
+                value={filter.scheduledDateFilter}
+                onChange={(e) =>
+                  setFilter({ ...filter, scheduledDateFilter: e.target.value })
+                }
+              />
+            </div>
+            <div className="col-md-4 d-flex align-items-end">
+              <button className="btn btn-secondary w-100" onClick={handleReset}>
+                Reset
+              </button>
+            </div>
+          </div>
+        )}
         {/* Table */}
         <div className="table-responsive p-3">
           <table className="table table-bordered table-hover">
@@ -299,9 +303,9 @@ function TodoList() {
                     <td>{offset + index + 1}</td>
                     <td>{todo.title}</td>
                     <td>{todo.user?.username ?? "N/A"}</td>
-                    <td>{todo.scheduled_date}</td>
-                    <td>{ucFirst(todo.priority)}</td>
-                    <td>{ucFirst(todo.status)}</td>
+                    <td>{dateFormat(todo.scheduled_date)}</td>
+                    <td>{statusBadge(todo.priority)}</td>
+                    <td>{statusBadge(todo.status)}</td>
                     <td>{todo.description}</td>
 
                     <td>
