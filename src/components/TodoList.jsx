@@ -154,20 +154,31 @@ function TodoList() {
       <ToastContainer position="top-center" autoClose={2000} />
 
       <div className="card shadow-sm">
-        <div className="card-header d-flex justify-content-between align-items-center" style={{ backgroundColor: "#a7cef6", color: "rgba(0,0,0,1)" }}>
-          <p className="mb-0 font-weight-bold" style={{ fontSize: "1rem" }}>To-Do Task List</p>
-          <button
-            className="btn btn-light btn-sm"
-            onClick={() => {
-              setEditMode(false);
-              setEditTodo(null);
-              setShowModal(true);
-            }}
-          >
-            Add To-Do
-          </button>
-        </div>
+        <div className="card-header d-flex justify-content-between align-items-center"
+            style={{ backgroundColor: "#a7cef6", color: "rgba(0,0,0,1)" }}
+        >
+          <p className="mb-0 font-weight-bold" style={{ fontSize: "1rem" }}>
+            To-Do Task List
+          </p>
 
+          {/* BUTTON GROUP */}
+          <div className="d-flex">
+            <button
+              className="btn btn-light btn-sm"
+              onClick={() => {
+                setEditMode(false);
+                setEditTodo(null);
+                setShowModal(true);
+              }}
+            >
+              Add To-Do
+            </button>
+
+            <button className="btn btn-light btn-sm ml-2">
+              Logout
+            </button>
+          </div>
+        </div>
         <div className="row g-3 p-3">
           <div className="col-md-4">
             <label htmlFor="titleFilter" className="form-label">Title</label>

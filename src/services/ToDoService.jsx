@@ -7,7 +7,7 @@ class ToDoService {
    * @returns {Promise}
    */
   getTodos(queryString = "") {
-    const endPoint = "" + (queryString ? `?${queryString}` : "");
+    const endPoint = "todo/list" + (queryString ? `?${queryString}` : "");
     const inputData = {
       endPoint: endPoint,
       addditionalHeaderData: {},
