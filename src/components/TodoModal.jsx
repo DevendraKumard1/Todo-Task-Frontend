@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
-import AssigneeService from "../services/AssigneeService";
 import ToDoService from "../services/ToDoService";
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-function CreateToDo({ show, onClose, onSuccess, initialData, isEdit }) {
+function TodoModal({ show, onClose, onSuccess, initialData, isEdit }) {
   const [assignee, setAssignee] = useState([]);
   const [isSubmit, setSubmit] = useState(false);
   const [formData, setFormData] = useState({
@@ -16,15 +15,14 @@ function CreateToDo({ show, onClose, onSuccess, initialData, isEdit }) {
   });
 
   useEffect(() => {
-    // Fetch assignees
     const getAssignee = async () => {
       try {
-        const res = await AssigneeService.getAssignee();
+        const res = await ToDoService.listAssignee();
         if (res?.data?.status === 200) {
           setAssignee(res.data.result ?? []);
         }
       } catch (err) {
-        console.error("Error in getAssignee:", err);
+        toast.error("Error in assignee List:", err)
       }
     };
     getAssignee();
@@ -39,7 +37,6 @@ function CreateToDo({ show, onClose, onSuccess, initialData, isEdit }) {
         description: initialData.description ?? ""
       });
     } else {
-      // Reset form for create
       setFormData({
         title: "",
         scheduled_date: "",
@@ -63,11 +60,12 @@ function CreateToDo({ show, onClose, onSuccess, initialData, isEdit }) {
 
     try {
       if (isEdit && initialData?.id) {
+        console.log(initialData)
         const res = await ToDoService.updateTodo(initialData.id, {
           title,
           scheduled_date,
           priority,
-          user_id: assignee,
+          assignee: assignee,
           description
         });
         if (res?.status === 200) {
@@ -115,62 +113,57 @@ function CreateToDo({ show, onClose, onSuccess, initialData, isEdit }) {
               </button>
             </div>
 
-            {/* Modal Body with Form */}
             <div className="modal-body">
               <form onSubmit={saveOrUpdateTodo}>
-                {/* Title */}
-                <div className="form-group">
-                  <label>Title<span className="text-danger">*</span></label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  />
+                <div className="row">
+                  <div className="form-group col-md-6">
+                    <label>Title<span className="text-danger">*</span></label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Title"
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group col-md-6">
+                    <label>Scheduled Date<span className="text-danger">*</span></label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      value={formData.scheduled_date}
+                      onChange={(e) => setFormData({ ...formData, scheduled_date: e.target.value })}
+                    />
+                  </div>
                 </div>
-
-                {/* Scheduled Date */}
-                <div className="form-group">
-                  <label>Scheduled Date<span className="text-danger">*</span></label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    value={formData.scheduled_date}
-                    onChange={(e) => setFormData({ ...formData, scheduled_date: e.target.value })}
-                  />
+                <div className="row">
+                  <div className="form-group col-md-6">
+                    <label>Priority<span className="text-danger">*</span></label>
+                    <select
+                      className="form-control"
+                      value={formData.priority}
+                      onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                    >
+                      <option value="">--Select--</option>
+                      <option value="high">High</option>
+                      <option value="medium">Medium</option>
+                      <option value="low">Low</option>
+                    </select>
+                  </div>
+                  <div className="form-group col-md-6">
+                    <label>Assignee<span className="text-danger">*</span></label>
+                    <select
+                      className="form-control"
+                      value={formData.assignee}
+                      onChange={(e) => setFormData({ ...formData, assignee: e.target.value })}
+                    >
+                      <option value="">--Select Assignee--</option>
+                      {assignee.map((a) => (
+                        <option key={a.id} value={a.id}>{a.username}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-
-                {/* Priority */}
-                <div className="form-group">
-                  <label>Priority<span className="text-danger">*</span></label>
-                  <select
-                    className="form-control"
-                    value={formData.priority}
-                    onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                  >
-                    <option value="">--Select--</option>
-                    <option value="high">High</option>
-                    <option value="medium">Medium</option>
-                    <option value="low">Low</option>
-                  </select>
-                </div>
-
-                {/* Assignee */}
-                <div className="form-group">
-                  <label>Assignee<span className="text-danger">*</span></label>
-                  <select
-                    className="form-control"
-                    value={formData.assignee}
-                    onChange={(e) => setFormData({ ...formData, assignee: e.target.value })}
-                  >
-                    <option value="">--Select Assignee--</option>
-                    {assignee.map((a) => (
-                      <option key={a.id} value={a.id}>{a.username}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Description */}
                 <div className="form-group">
                   <label>Description</label>
                   <textarea
@@ -195,4 +188,4 @@ function CreateToDo({ show, onClose, onSuccess, initialData, isEdit }) {
   );
 }
 
-export default CreateToDo;
+export default TodoModal;

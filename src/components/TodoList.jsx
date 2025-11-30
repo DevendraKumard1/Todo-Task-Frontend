@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
-import CreateToDo from "./CreateToDo";
+import TodoModal from "./TodoModal";
 import ToDoService from "../services/ToDoService";
-import AssigneeService from "../services/AssigneeService";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import ucFirst from "./Utils";
 
 function TodoList() {
   const [showModal, setShowModal] = useState(false);
@@ -14,12 +14,11 @@ function TodoList() {
   const [currentPage, setCurrentPage] = useState(1);
   const [assignee, setAssignee] = useState([]);
   const [filter, setFilter] = useState({
-    search: "",
-    status: "",
-    priority: "",
-    user_id: "",
-    start_date: "",
-    end_date: ""
+    titleFilter: "",
+    statusFilter: "",
+    priorityFilter: "",
+    assigneeFilter: "",
+    scheduledDateFilter: "",
   });
   const [editTodo, setEditTodo] = useState(null);
   const [editMode, setEditMode] = useState(false);
@@ -31,12 +30,12 @@ function TodoList() {
 
   const getAssignee = async () => {
     try {
-      const res = await AssigneeService.getAssignee();
+      const res = await ToDoService.listAssignee();
       if (res?.data?.status === 200) {
         setAssignee(res.data.result ?? []);
       }
     } catch (err) {
-      console.error("Error in getAssignee:", err);
+      console.error("Error in assignee list:", err);
     }
   };
 
@@ -79,7 +78,7 @@ function TodoList() {
   }, [getTodos]);
 
   const handleRefresh = () => {
-    getTodos(); // refetch latest list
+    getTodos();
   };
 
   const totalPages = Math.ceil(total / limit);
@@ -107,12 +106,11 @@ function TodoList() {
 
   const handleReset = () => {
     setFilter({
-      search: "",
-      status: "",
-      priority: "",
-      user_id: "",
-      start_date: "",
-      end_date: ""
+      titleFilter: "",
+      statusFilter: "",
+      priorityFilter: "",
+      assigneeFilter: "",
+      scheduledDateFilter: "",
     });
     setOffset(0);
     setCurrentPage(1);
@@ -123,9 +121,8 @@ function TodoList() {
     try {
       await ToDoService.revokeTodo(todoId);
       toast.success("Todo revoked successfully!");
-      getTodos(); // refresh list after revoke
+      getTodos();
     } catch (err) {
-      console.error("Failed to revoke todo:", err);
       toast.error("Failed to revoke todo");
     }
   };
@@ -154,12 +151,9 @@ function TodoList() {
 
   return (
     <div className="container mt-5">
-      {/* Toast container */}
-      <ToastContainer position="top-center" autoClose={3000} />
+      <ToastContainer position="top-center" autoClose={2000} />
 
-      {/* Main Card */}
       <div className="card shadow-sm">
-        {/* Header */}
         <div className="card-header d-flex justify-content-between align-items-center" style={{ backgroundColor: "#a7cef6", color: "rgba(0,0,0,1)" }}>
           <p className="mb-0 font-weight-bold" style={{ fontSize: "1rem" }}>To-Do Task List</p>
           <button
@@ -174,28 +168,25 @@ function TodoList() {
           </button>
         </div>
 
-                {/* Filters */}
         <div className="row g-3 p-3">
-          {/* Search */}
           <div className="col-md-4">
-            <label htmlFor="search" className="form-label">Search</label>
+            <label htmlFor="titleFilter" className="form-label">Title</label>
             <input
               type="text"
-              id="search"
+              id="titleFilter"
               className="form-control"
-              placeholder="Search..."
-              value={filter.search}
-              onChange={(e) => setFilter({ ...filter, search: e.target.value })}
+              placeholder="Title..."
+              value={filter.titleFilter}
+              onChange={(e) => setFilter({ ...filter, titleFilter: e.target.value })}
             />
           </div>
-          {/* Assignee */}
           <div className="col-md-4">
-            <label htmlFor="assignee" className="form-label">Assignee</label>
+            <label htmlFor="assigneeFilter" className="form-label">Assignee</label>
             <select
               className="form-control"
-              id="assignee"
-              value={filter.user_id}
-              onChange={(e) => setFilter({ ...filter, user_id: e.target.value })}
+              id="assigneeFilter"
+              value={filter.assigneeFilter}
+              onChange={(e) => setFilter({ ...filter, assigneeFilter: e.target.value })}
             >
               <option value="">--Select Assignee--</option>
               {assignee.map((a) => (
@@ -203,14 +194,13 @@ function TodoList() {
               ))}
             </select>
           </div>
-          {/* Status */}
           <div className="col-md-4">
-            <label htmlFor="status" className="form-label">Status</label>
+            <label htmlFor="statusFilter" className="form-label">Status</label>
             <select
-              id="status"
+              id="statusFilter"
               className="form-control"
-              value={filter.status}
-              onChange={(e) => setFilter({ ...filter, status: e.target.value })}
+              value={filter.statusFilter}
+              onChange={(e) => setFilter({ ...filter, statusFilter: e.target.value })}
             >
               <option value="">--Select--</option>
               <option value="pending">Pending</option>
@@ -219,14 +209,13 @@ function TodoList() {
               <option value="completed">Completed</option>
             </select>
           </div>
-          {/* Priority */}
           <div className="col-md-4">
-            <label htmlFor="priority" className="form-label">Priority</label>
+            <label htmlFor="priorityFilter" className="form-label">Priority</label>
             <select
-              id="priority"
+              id="priorityFilter"
               className="form-control"
-              value={filter.priority}
-              onChange={(e) => setFilter({ ...filter, priority: e.target.value })}
+              value={filter.priorityFilter}
+              onChange={(e) => setFilter({ ...filter, priorityFilter: e.target.value })}
             >
               <option value="">--Select--</option>
               <option value="high">High</option>
@@ -234,44 +223,28 @@ function TodoList() {
               <option value="low">Low</option>
             </select>
           </div>
-          {/* Start Date */}
           <div className="col-md-4">
-            <label htmlFor="start_date" className="form-label">Start Date</label>
+            <label htmlFor="scheduledDateFilter" className="form-label">Scheduled Date</label>
             <input
               type="date"
-              id="start_date"
+              id="scheduledDateFilter"
               className="form-control"
-              value={filter.start_date}
-              onChange={(e) => setFilter({ ...filter, start_date: e.target.value })}
+              value={filter.scheduledDateFilter}
+              onChange={(e) => setFilter({ ...filter, scheduledDateFilter: e.target.value })}
             />
           </div>
-          {/* End Date */}
-          <div className="col-md-4">
-            <label htmlFor="end_date" className="form-label">End Date</label>
-            <input
-              type="date"
-              id="end_date"
-              className="form-control"
-              value={filter.end_date}
-              onChange={(e) => setFilter({ ...filter, end_date: e.target.value })}
-            />
-          </div>
-          {/* Buttons */}
-          <div className="col-md-4 d-flex align-items-end gap-2">
-            <button className="btn btn-primary my-2 mr-2" onClick={() => getTodos()}>
-              Apply
-            </button>
+          <div className="col-md-4 d-flex align-items-end mt-4">
             <button className="btn btn-secondary my-2" onClick={handleReset}>
               Reset
             </button>
           </div>
         </div>
 
-        {/* Table */}
         <div className="card-body p-0">
           <div className="table-responsive">
             <table className="table table-bordered table-hover mb-0" style={{ fontSize: "0.85rem" }}>
               <thead className="thead-light">
+                <tr>
                   <th>S.No</th>
                   <th>Title</th>
                   <th>Assignee</th>
@@ -280,6 +253,7 @@ function TodoList() {
                   <th>Status</th>
                   <th>Description</th>
                   <th>Actions</th>
+                </tr>
               </thead>
               <tbody>
                 {todos.length === 0 ? (
@@ -295,19 +269,16 @@ function TodoList() {
                         opacity: todo.revoked || todo.status === "revoked" ? 0.5 : 1
                       }}
                     >
-                      {/* data cells */}
                       <td>{offset + index + 1}</td>
                       <td>{todo.title}</td>
                       <td>{todo.user?.username ?? "N/A"}</td>
                       <td>{todo.scheduled_date}</td>
-                      <td>{todo.priority}</td>
-                      <td>{todo.status}</td>
+                      <td>{ucFirst(todo.priority)}</td>
+                      <td>{ucFirst(todo.status)}</td>
                       <td>{todo.description}</td>
                       <td>
-                        {/* Edit */}
-                        <button className="btn btn-sm btn-primary mr-2" onClick={() => handleEdit(todo)} disabled={todo.revoked} title="Edit">✏️</button>
-                        {/* Revoke */}
-                        <button className="btn btn-sm btn-danger" onClick={() => handleRevoke(todo.id, index)} title="Revoke">❌</button>
+                        <button className="btn btn-sm btn-primary mr-2" onClick={() => handleEdit(todo)} disabled={todo.revoked} title="Edit"><i className="bi bi-pencil"></i></button>
+                        <button className="btn btn-sm btn-danger" onClick={() => handleRevoke(todo.id, index)} title="Revoke"><i className="bi bi-x-circle"></i></button>
                       </td>
                     </tr>
                   ))
@@ -335,11 +306,11 @@ function TodoList() {
       </div>
 
       {/* Modal for create/edit */}
-      <CreateToDo
+      <TodoModal
         show={showModal}
         onClose={handleCloseModal}
         onAdd={handleAddOrUpdate}
-        onSuccess={handleRefresh} // <-- pass refresh callback
+        onSuccess={handleRefresh}
         initialData={editTodo}
         isEdit={editMode}
       />
