@@ -3,15 +3,15 @@ import ApiService from "./ApiService";
 class ToDoService {
   /**
    * Fetch todos with optional query parameters
-   * @param {string} queryString - URL query parameters (e.g., "status=pending&limit=10")
+   * @param {string} queryString
    * @returns {Promise}
    */
   getTodos(queryString = "") {
-    const endPoint = "todos" + (queryString ? `?${queryString}` : "");
+    const endPoint = "" + (queryString ? `?${queryString}` : "");
     const inputData = {
       endPoint: endPoint,
-      addditionalHeaderData: {}, // Add headers if needed
-      postData: {}, // GET request, no body
+      addditionalHeaderData: {},
+      postData: {},
     };
     return ApiService.getCall(inputData);
   }
@@ -21,7 +21,7 @@ class ToDoService {
    * @returns {Promise}
    */
   listAssignee() {
-    const endPoint = "todos/assignee";
+    const endPoint = "assignee";
     const inputData = {
       endPoint: endPoint,
       addditionalHeaderData: {},
@@ -32,11 +32,11 @@ class ToDoService {
 
   /**
    * Create a new todo
-   * @param {Object} data - Todo data
+   * @param {Object} data
    * @returns {Promise}
    */
   createTodo(data) {
-    const endPoint = "todos"; // matches POST "/todos"
+    const endPoint = "todo";
     const inputData = {
       endPoint: endPoint,
       addditionalHeaderData: {},
@@ -67,28 +67,13 @@ class ToDoService {
    * @returns {Promise}
    */
   updateTodo(todo_id, data) {
-    const endPoint = `todos/${todo_id}`;
+    const endPoint = `todo/${todo_id}`;
     const inputData = {
       endPoint: endPoint,
       addditionalHeaderData: {},
       postData: data,
     };
     return ApiService.putCall(inputData);
-  }
-
-  /**
-   * Soft delete a todo by ID
-   * @param {number} todo_id
-   * @returns {Promise}
-   */
-  deleteTodo(todo_id) {
-    const endPoint = `todos/${todo_id}`;
-    const inputData = {
-      endPoint: endPoint,
-      addditionalHeaderData: {},
-      postData: {},
-    };
-    return ApiService.deleteCall(inputData);
   }
 
   /**
