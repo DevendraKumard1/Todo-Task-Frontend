@@ -1,8 +1,15 @@
 import React, { useState, useEffect, useCallback } from "react";
 import TodoModal from "./TodoModal";
-import ToDoService from "../services/ToDoService";
+
+import {
+  getTodos,
+  listAssignee,
+  revokeTodo
+} from "../services/ToDoService";
+
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+
 import ucFirst from "./Utils";
 
 function TodoList() {
@@ -13,6 +20,7 @@ function TodoList() {
   const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [assignee, setAssignee] = useState([]);
+
   const [filter, setFilter] = useState({
     titleFilter: "",
     statusFilter: "",
@@ -20,17 +28,18 @@ function TodoList() {
     assigneeFilter: "",
     scheduledDateFilter: "",
   });
+
   const [editTodo, setEditTodo] = useState(null);
   const [editMode, setEditMode] = useState(false);
 
-  // Fetch Assignee list on mount
+  // Fetch Assignee
   useEffect(() => {
-    getAssignee();
+    loadAssignee();
   }, []);
 
-  const getAssignee = async () => {
+  const loadAssignee = async () => {
     try {
-      const res = await ToDoService.listAssignee();
+      const res = await listAssignee();
       if (res?.data?.status === 200) {
         setAssignee(res.data.result ?? []);
       }
@@ -39,28 +48,29 @@ function TodoList() {
     }
   };
 
-  const getTodos = useCallback(async () => {
+  // Fetch Todos (renamed to avoid conflict)
+  const fetchTodos = useCallback(async () => {
     try {
-      const queryData = {
-        ...filter,
-        offset,
-        limit
-      };
+      const queryData = { ...filter, offset, limit };
+
       const params = new URLSearchParams();
-      Object.entries(queryData).forEach(([key, value]) => {
-        if (value !== "" && value !== null && value !== undefined) {
-          params.append(key, value);
+      Object.entries(queryData).forEach(([k, v]) => {
+        if (v !== "" && v !== null && v !== undefined) {
+          params.append(k, v);
         }
       });
+
       const queryString = params.toString();
 
-      const res = await ToDoService.getTodos(queryString);
+      const res = await getTodos(queryString);
+
       if (res?.data?.status === 200) {
-        const todosWithRevokedFlag = res.data.result?.map((todo) => ({
-          ...todo,
+        const mapped = res.data.result?.map((t) => ({
+          ...t,
           revoked: false
         })) ?? [];
-        setTodos(todosWithRevokedFlag);
+
+        setTodos(mapped);
         setTotal(res.data.total ?? 0);
       } else {
         setTodos([]);
@@ -74,36 +84,31 @@ function TodoList() {
   }, [offset, filter]);
 
   useEffect(() => {
-    getTodos();
-  }, [getTodos]);
+    fetchTodos();
+  }, [fetchTodos]);
 
-  const handleRefresh = () => {
-    getTodos();
-  };
+  const handleRefresh = () => fetchTodos();
 
   const totalPages = Math.ceil(total / limit);
-
-  const handleNext = () => {
-    if (currentPage < totalPages) {
-      const nextPage = currentPage + 1;
-      setCurrentPage(nextPage);
-      goToPage(nextPage);
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentPage > 1) {
-      const prevPage = currentPage - 1;
-      setCurrentPage(prevPage);
-      goToPage(prevPage);
-    }
-  };
 
   const goToPage = (page) => {
     setCurrentPage(page);
     setOffset((page - 1) * limit);
   };
 
+  const handleNext = () => {
+    if (currentPage < totalPages) {
+      goToPage(currentPage + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentPage > 1) {
+      goToPage(currentPage - 1);
+    }
+  };
+
+  // Reset Filters
   const handleReset = () => {
     setFilter({
       titleFilter: "",
@@ -116,36 +121,32 @@ function TodoList() {
     setCurrentPage(1);
   };
 
-  // Revoke Function
-  const handleRevoke = async (todoId, index) => {
+  // Revoke
+  const handleRevoke = async (todoId) => {
     try {
-      await ToDoService.revokeTodo(todoId);
+      await revokeTodo(todoId);
       toast.success("Todo revoked successfully!");
-      getTodos();
+      fetchTodos();
     } catch (err) {
       toast.error("Failed to revoke todo");
     }
   };
 
-  // Edit Function
+  // Edit
   const handleEdit = (todo) => {
     setEditTodo(todo);
     setEditMode(true);
     setShowModal(true);
   };
 
-  // Modal close
   const handleCloseModal = () => {
     setShowModal(false);
     setEditTodo(null);
     setEditMode(false);
   };
 
-  // Handle add or update
-  const handleAddOrUpdate = (todo) => {
-    // Refresh list after add/update
-    getTodos();
-    toast.success(`Todo ${editMode ? "updated" : "added"} successfully!`);
+  const handleAddOrUpdate = () => {
+    fetchTodos();
     handleCloseModal();
   };
 
@@ -154,14 +155,12 @@ function TodoList() {
       <ToastContainer position="top-center" autoClose={2000} />
 
       <div className="card shadow-sm">
-        <div className="card-header d-flex justify-content-between align-items-center"
-            style={{ backgroundColor: "#a7cef6", color: "rgba(0,0,0,1)" }}
-        >
-          <p className="mb-0 font-weight-bold" style={{ fontSize: "1rem" }}>
-            To-Do Task List
-          </p>
 
-          {/* BUTTON GROUP */}
+        {/* Header */}
+        <div className="card-header d-flex justify-content-between align-items-center"
+          style={{ backgroundColor: "#a7cef6", color: "rgba(0,0,0,1)" }}>
+          <p className="mb-0 font-weight-bold">To-Do Task List</p>
+
           <div className="d-flex">
             <button
               className="btn btn-light btn-sm"
@@ -179,39 +178,45 @@ function TodoList() {
             </button>
           </div>
         </div>
+
+        {/* Filters */}
         <div className="row g-3 p-3">
           <div className="col-md-4">
-            <label htmlFor="titleFilter" className="form-label">Title</label>
+            <label>Title</label>
             <input
               type="text"
-              id="titleFilter"
               className="form-control"
-              placeholder="Title..."
               value={filter.titleFilter}
-              onChange={(e) => setFilter({ ...filter, titleFilter: e.target.value })}
+              onChange={(e) =>
+                setFilter({ ...filter, titleFilter: e.target.value })
+              }
             />
           </div>
+
           <div className="col-md-4">
-            <label htmlFor="assigneeFilter" className="form-label">Assignee</label>
+            <label>Assignee</label>
             <select
               className="form-control"
-              id="assigneeFilter"
               value={filter.assigneeFilter}
-              onChange={(e) => setFilter({ ...filter, assigneeFilter: e.target.value })}
+              onChange={(e) =>
+                setFilter({ ...filter, assigneeFilter: e.target.value })
+              }
             >
-              <option value="">--Select Assignee--</option>
+              <option value="">--Select--</option>
               {assignee.map((a) => (
                 <option key={a.id} value={a.id}>{a.username}</option>
               ))}
             </select>
           </div>
+
           <div className="col-md-4">
-            <label htmlFor="statusFilter" className="form-label">Status</label>
+            <label>Status</label>
             <select
-              id="statusFilter"
               className="form-control"
               value={filter.statusFilter}
-              onChange={(e) => setFilter({ ...filter, statusFilter: e.target.value })}
+              onChange={(e) =>
+                setFilter({ ...filter, statusFilter: e.target.value })
+              }
             >
               <option value="">--Select--</option>
               <option value="pending">Pending</option>
@@ -220,13 +225,15 @@ function TodoList() {
               <option value="completed">Completed</option>
             </select>
           </div>
+
           <div className="col-md-4">
-            <label htmlFor="priorityFilter" className="form-label">Priority</label>
+            <label>Priority</label>
             <select
-              id="priorityFilter"
               className="form-control"
               value={filter.priorityFilter}
-              onChange={(e) => setFilter({ ...filter, priorityFilter: e.target.value })}
+              onChange={(e) =>
+                setFilter({ ...filter, priorityFilter: e.target.value })
+              }
             >
               <option value="">--Select--</option>
               <option value="high">High</option>
@@ -234,94 +241,121 @@ function TodoList() {
               <option value="low">Low</option>
             </select>
           </div>
+
           <div className="col-md-4">
-            <label htmlFor="scheduledDateFilter" className="form-label">Scheduled Date</label>
+            <label>Scheduled Date</label>
             <input
               type="date"
-              id="scheduledDateFilter"
               className="form-control"
               value={filter.scheduledDateFilter}
-              onChange={(e) => setFilter({ ...filter, scheduledDateFilter: e.target.value })}
+              onChange={(e) =>
+                setFilter({ ...filter, scheduledDateFilter: e.target.value })
+              }
             />
           </div>
-          <div className="col-md-4 d-flex align-items-end mt-4">
-            <button className="btn btn-secondary my-2" onClick={handleReset}>
+
+          <div className="col-md-4 d-flex align-items-end">
+            <button className="btn btn-secondary w-100" onClick={handleReset}>
               Reset
             </button>
           </div>
         </div>
 
-        <div className="card-body p-0">
-          <div className="table-responsive">
-            <table className="table table-bordered table-hover mb-0" style={{ fontSize: "0.85rem" }}>
-              <thead className="thead-light">
+        {/* Table */}
+        <div className="table-responsive p-3">
+          <table className="table table-bordered table-hover">
+            <thead className="thead-light">
+              <tr>
+                <th>S.No</th>
+                <th>Title</th>
+                <th>Assignee</th>
+                <th>Scheduled Date</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Description</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {todos.length === 0 ? (
                 <tr>
-                  <th>S.No</th>
-                  <th>Title</th>
-                  <th>Assignee</th>
-                  <th>Scheduled Date</th>
-                  <th>Priority</th>
-                  <th>Status</th>
-                  <th>Description</th>
-                  <th>Actions</th>
+                  <td colSpan="8" className="text-center">No records found</td>
                 </tr>
-              </thead>
-              <tbody>
-                {todos.length === 0 ? (
-                  <tr>
-                    <td colSpan="8" className="text-center">No records found</td>
+              ) : (
+                todos.map((todo, index) => (
+                  <tr
+                    key={todo.id}
+                    style={{
+                      textDecoration:
+                        todo.revoked || todo.status === "revoked"
+                          ? "line-through"
+                          : "none",
+                      opacity:
+                        todo.revoked || todo.status === "revoked"
+                          ? 0.5
+                          : 1
+                    }}
+                  >
+                    <td>{offset + index + 1}</td>
+                    <td>{todo.title}</td>
+                    <td>{todo.user?.username ?? "N/A"}</td>
+                    <td>{todo.scheduled_date}</td>
+                    <td>{ucFirst(todo.priority)}</td>
+                    <td>{ucFirst(todo.status)}</td>
+                    <td>{todo.description}</td>
+
+                    <td>
+                      <button
+                        className="btn btn-sm btn-primary mr-2"
+                        onClick={() => handleEdit(todo)}
+                        disabled={todo.revoked}
+                      >
+                        <i className="bi bi-pencil"></i>
+                      </button>
+
+                      <button
+                        className="btn btn-sm btn-danger"
+                        onClick={() => handleRevoke(todo.id)}
+                      >
+                        <i className="bi bi-x-circle"></i>
+                      </button>
+                    </td>
                   </tr>
-                ) : (
-                  todos.map((todo, index) => (
-                    <tr
-                      key={todo.id}
-                      style={{
-                        textDecoration: todo.revoked || todo.status === "revoked" ? "line-through" : "none",
-                        opacity: todo.revoked || todo.status === "revoked" ? 0.5 : 1
-                      }}
-                    >
-                      <td>{offset + index + 1}</td>
-                      <td>{todo.title}</td>
-                      <td>{todo.user?.username ?? "N/A"}</td>
-                      <td>{todo.scheduled_date}</td>
-                      <td>{ucFirst(todo.priority)}</td>
-                      <td>{ucFirst(todo.status)}</td>
-                      <td>{todo.description}</td>
-                      <td>
-                        <button className="btn btn-sm btn-primary mr-2" onClick={() => handleEdit(todo)} disabled={todo.revoked} title="Edit"><i className="bi bi-pencil"></i></button>
-                        <button className="btn btn-sm btn-danger" onClick={() => handleRevoke(todo.id, index)} title="Revoke"><i className="bi bi-x-circle"></i></button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
 
         {/* Pagination */}
-        <div className="card-footer d-flex justify-content-between align-items-center">
-          <span>
-            Page {currentPage} of {totalPages || 1}
-          </span>
-          <div className="btn-group">
-            <button className="btn btn-secondary btn-sm" onClick={handlePrevious} disabled={currentPage === 1}>
+        <div className="card-footer d-flex justify-content-between">
+          <span>Page {currentPage} of {totalPages || 1}</span>
+
+          <div>
+            <button
+              className="btn btn-secondary btn-sm mr-2"
+              disabled={currentPage === 1}
+              onClick={handlePrevious}
+            >
               Prev
             </button>
-            <button className="btn btn-secondary btn-sm" onClick={handleNext} disabled={currentPage === totalPages || totalPages === 0}>
+
+            <button
+              className="btn btn-secondary btn-sm"
+              disabled={currentPage === totalPages || totalPages === 0}
+              onClick={handleNext}
+            >
               Next
             </button>
           </div>
         </div>
-
       </div>
 
-      {/* Modal for create/edit */}
+      {/* Modal */}
       <TodoModal
         show={showModal}
         onClose={handleCloseModal}
-        onAdd={handleAddOrUpdate}
-        onSuccess={handleRefresh}
+        onSuccess={handleAddOrUpdate}
         initialData={editTodo}
         isEdit={editMode}
       />

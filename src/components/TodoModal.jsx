@@ -1,99 +1,129 @@
 import React, { useState, useEffect } from "react";
-import ToDoService from "../services/ToDoService";
-import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import {
+  listAssignee,
+  createTodo,
+  updateTodo,
+} from "../services/ToDoService";
+import { toast } from "react-toastify";
 
 function TodoModal({ show, onClose, onSuccess, initialData, isEdit }) {
   const [assignee, setAssignee] = useState([]);
   const [isSubmit, setSubmit] = useState(false);
-  const [formData, setFormData] = useState({
+
+  const defaultForm = {
     title: "",
     scheduled_date: "",
     priority: "",
+    status: "",
     assignee: "",
-    description: ""
-  });
+    description: "",
+  };
 
+  const [formData, setFormData] = useState(defaultForm);
+
+  // ----------------------------------------------------
+  // Load dropdown + populate form when modal opens
+  // ----------------------------------------------------
   useEffect(() => {
-    const getAssignee = async () => {
-      try {
-        const res = await ToDoService.listAssignee();
-        if (res?.data?.status === 200) {
-          setAssignee(res.data.result ?? []);
-        }
-      } catch (err) {
-        toast.error("Error in assignee List:", err)
+    if (show) {
+      loadAssignees();
+
+      if (initialData && isEdit) {
+        setFormData({
+          title: initialData.title ?? "",
+          scheduled_date: initialData.scheduled_date ?? "",
+          priority: initialData.priority ?? "",
+          status: initialData.status ?? "",
+          assignee: initialData.user_id ?? "",
+          description: initialData.description ?? "",
+        });
+      } else {
+        setFormData(defaultForm);
       }
-    };
-    getAssignee();
-
-    // Populate form data if editing, else reset for create
-    if (initialData && isEdit) {
-      setFormData({
-        title: initialData.title ?? "",
-        scheduled_date: initialData.scheduled_date ?? "",
-        priority: initialData.priority ?? "",
-        assignee: initialData.user_id ?? "",
-        description: initialData.description ?? ""
-      });
-    } else {
-      setFormData({
-        title: "",
-        scheduled_date: "",
-        priority: "",
-        assignee: "",
-        description: ""
-      });
     }
-  }, [initialData, isEdit]);
+  }, [show, initialData, isEdit]);
 
+  // ----------------------------------------------------
+  // Load assignee dropdown
+  // ----------------------------------------------------
+  const loadAssignees = async () => {
+    try {
+      const res = await listAssignee();
+      if (res?.data?.status === 200) {
+        setAssignee(res.data.result);
+      } else {
+        toast.error("Failed to load assignees");
+      }
+    } catch (err) {
+      toast.error("Failed to load assignees");
+    }
+  };
+
+  // ----------------------------------------------------
+  // Create or Update Todo
+  // ----------------------------------------------------
   const saveOrUpdateTodo = async (e) => {
     e.preventDefault();
     setSubmit(true);
-    const { title, scheduled_date, priority, assignee, description } = formData;
 
-    if (!title || !scheduled_date || !priority || !assignee) {
-      alert("Please fill all required fields.");
+    const { title, scheduled_date, priority, status, assignee, description } =
+      formData;
+
+    // Validation
+    if (!title || !scheduled_date || !priority || !status || !assignee) {
+      toast.error("All required fields must be filled");
       setSubmit(false);
       return;
     }
 
     try {
       if (isEdit && initialData?.id) {
-        console.log(initialData)
-        const res = await ToDoService.updateTodo(initialData.id, {
+        // ----------------------------------------------------
+        // UPDATE TODO
+        // ----------------------------------------------------
+        const res = await updateTodo(initialData.id, {
           title,
           scheduled_date,
           priority,
-          assignee: assignee,
-          description
+          status,
+          user_id: assignee,
+          description,
         });
+
         if (res?.status === 200) {
           toast.success("Todo updated successfully");
-          onSuccess(); // refresh list
+          setFormData(defaultForm);
+          onSuccess();
+          onClose();
         } else {
-          toast.error("Failed to update todo");
+          toast.error(res?.message || "Update failed");
         }
       } else {
-        const res = await ToDoService.createTodo({
+        // ----------------------------------------------------
+        // CREATE TODO
+        // ----------------------------------------------------
+        const res = await createTodo({
           title,
           scheduled_date,
           priority,
+          status,
           user_id: assignee,
-          description
+          description,
         });
+
         if (res?.status === 200) {
           toast.success("Todo created successfully");
-          onSuccess(); // refresh list
+          setFormData(defaultForm);
+          onSuccess();
+          onClose();
         } else {
-          toast.error("Failed to create todo");
+          toast.error(res?.message || "Create failed");
         }
       }
-      onClose();
     } catch (err) {
-      console.error("Error saving todo:", err);
-      toast.error("An error occurred");
+      toast.error("Something went wrong");
     }
+
     setSubmit(false);
   };
 
@@ -102,47 +132,69 @@ function TodoModal({ show, onClose, onSuccess, initialData, isEdit }) {
   return (
     <>
       <div className="modal-backdrop fade show"></div>
-      <div className={`modal fade show d-block`} tabIndex="-1">
+
+      <div className="modal fade show d-block" tabIndex="-1">
         <div className="modal-dialog modal-lg">
           <div className="modal-content">
-            {/* Modal Header */}
+
+            {/* HEADER */}
             <div className="modal-header">
-              <h5 className="modal-title">{isEdit ? "Edit To Do" : "Create To Do"}</h5>
-              <button type="button" className="close" onClick={onClose}>
+              <h5 className="modal-title">
+                {isEdit ? "Edit To Do" : "Create To Do"}
+              </h5>
+              <button
+                className="close"
+                onClick={() => {
+                  setFormData(defaultForm);
+                  onClose();
+                }}
+              >
                 <span>&times;</span>
               </button>
             </div>
 
+            {/* BODY */}
             <div className="modal-body">
               <form onSubmit={saveOrUpdateTodo}>
+
                 <div className="row">
                   <div className="form-group col-md-6">
-                    <label>Title<span className="text-danger">*</span></label>
+                    <label>Title *</label>
                     <input
                       type="text"
                       className="form-control"
-                      placeholder="Title"
                       value={formData.title}
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, title: e.target.value })
+                      }
                     />
                   </div>
+
                   <div className="form-group col-md-6">
-                    <label>Scheduled Date<span className="text-danger">*</span></label>
+                    <label>Scheduled Date *</label>
                     <input
                       type="date"
                       className="form-control"
                       value={formData.scheduled_date}
-                      onChange={(e) => setFormData({ ...formData, scheduled_date: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          scheduled_date: e.target.value,
+                        })
+                      }
                     />
                   </div>
                 </div>
+
                 <div className="row">
                   <div className="form-group col-md-6">
-                    <label>Priority<span className="text-danger">*</span></label>
+                    <label>Priority *</label>
                     <select
                       className="form-control"
                       value={formData.priority}
-                      onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, priority: e.target.value })
+                      }
                     >
                       <option value="">--Select--</option>
                       <option value="high">High</option>
@@ -150,37 +202,72 @@ function TodoModal({ show, onClose, onSuccess, initialData, isEdit }) {
                       <option value="low">Low</option>
                     </select>
                   </div>
+
                   <div className="form-group col-md-6">
-                    <label>Assignee<span className="text-danger">*</span></label>
+                    <label>Status *</label>
+                    <select
+                      className="form-control"
+                      value={formData.status}
+                      onChange={(e) =>
+                        setFormData({ ...formData, status: e.target.value })
+                      }
+                    >
+                      <option value="">--Select--</option>
+                      <option value="pending">Pending</option>
+                      <option value="in_progress">In Progress</option>
+                      <option value="hold">Hold</option>
+                      <option value="completed">Completed</option>
+                      <option value="revoked">Revoked</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group col-md-6">
+                    <label>Assignee *</label>
                     <select
                       className="form-control"
                       value={formData.assignee}
-                      onChange={(e) => setFormData({ ...formData, assignee: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, assignee: e.target.value })
+                      }
                     >
                       <option value="">--Select Assignee--</option>
                       {assignee.map((a) => (
-                        <option key={a.id} value={a.id}>{a.username}</option>
+                        <option key={a.id} value={a.id}>
+                          {a.username}
+                        </option>
                       ))}
                     </select>
                   </div>
-                </div>
-                <div className="form-group">
-                  <label>Description</label>
-                  <textarea
-                    className="form-control"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  ></textarea>
+
+                  <div className="form-group col-md-6">
+                    <label>Description</label>
+                    <textarea
+                      className="form-control"
+                      value={formData.description}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          description: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
                 </div>
 
-                {/* Submit Button */}
+                {/* FOOTER */}
                 <div className="d-flex justify-content-end mt-3">
-                  <button type="submit" className="btn btn-primary" disabled={isSubmit}>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={isSubmit}
+                  >
                     {isSubmit ? "Saving..." : isEdit ? "Update" : "Save"}
                   </button>
                 </div>
+
               </form>
             </div>
+
           </div>
         </div>
       </div>
