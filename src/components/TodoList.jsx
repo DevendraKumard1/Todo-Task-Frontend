@@ -276,7 +276,6 @@ function TodoList() {
                 <th>Scheduled Date</th>
                 <th>Priority</th>
                 <th>Status</th>
-                <th>Description</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -306,8 +305,6 @@ function TodoList() {
                     <td>{dateFormat(todo.scheduled_date)}</td>
                     <td>{statusBadge(todo.priority)}</td>
                     <td>{statusBadge(todo.status)}</td>
-                    <td>{todo.description}</td>
-
                     <td>
                       <button
                         className="btn btn-sm btn-primary mr-2"
