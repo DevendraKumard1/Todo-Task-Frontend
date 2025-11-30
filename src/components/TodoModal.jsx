@@ -159,7 +159,7 @@ function TodoModal({ show, onClose, onSuccess, initialData, isEdit }) {
 
                 <div className="row">
                   <div className="form-group col-md-6">
-                    <label>Title *</label>
+                    <label>Title<span className="text-danger">*</span></label>
                     <input
                       type="text"
                       className="form-control"
@@ -171,7 +171,7 @@ function TodoModal({ show, onClose, onSuccess, initialData, isEdit }) {
                   </div>
 
                   <div className="form-group col-md-6">
-                    <label>Scheduled Date *</label>
+                    <label>Scheduled Date<span className="text-danger">*</span></label>
                     <input
                       type="date"
                       className="form-control"
@@ -188,7 +188,7 @@ function TodoModal({ show, onClose, onSuccess, initialData, isEdit }) {
 
                 <div className="row">
                   <div className="form-group col-md-6">
-                    <label>Priority *</label>
+                    <label>Priority<span className="text-danger">*</span></label>
                     <select
                       className="form-control"
                       value={formData.priority}
@@ -202,27 +202,28 @@ function TodoModal({ show, onClose, onSuccess, initialData, isEdit }) {
                       <option value="low">Low</option>
                     </select>
                   </div>
+                  {initialData && isEdit && (
+                    <div className="form-group col-md-6">
+                      <label>Status<span className="text-danger">*</span></label>
+                      <select
+                        className="form-control"
+                        value={formData.status}
+                        onChange={(e) =>
+                          setFormData({ ...formData, status: e.target.value })
+                        }
+                      >
+                        <option value="">--Select--</option>
+                        <option value="pending">Pending</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="hold">Hold</option>
+                        <option value="completed">Completed</option>
+                        <option value="revoked">Revoked</option>
+                      </select>
+                    </div>
+                  )}
 
                   <div className="form-group col-md-6">
-                    <label>Status *</label>
-                    <select
-                      className="form-control"
-                      value={formData.status}
-                      onChange={(e) =>
-                        setFormData({ ...formData, status: e.target.value })
-                      }
-                    >
-                      <option value="">--Select--</option>
-                      <option value="pending">Pending</option>
-                      <option value="in_progress">In Progress</option>
-                      <option value="hold">Hold</option>
-                      <option value="completed">Completed</option>
-                      <option value="revoked">Revoked</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group col-md-6">
-                    <label>Assignee *</label>
+                    <label>Assignee<span className="text-danger">*</span></label>
                     <select
                       className="form-control"
                       value={formData.assignee}
@@ -238,8 +239,9 @@ function TodoModal({ show, onClose, onSuccess, initialData, isEdit }) {
                       ))}
                     </select>
                   </div>
-
-                  <div className="form-group col-md-6">
+                </div>
+                <div className="row">
+                  <div className="form-group col-md-12">
                     <label>Description</label>
                     <textarea
                       className="form-control"
