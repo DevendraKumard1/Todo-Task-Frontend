@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from "react";
-import ToDoService from "../services/ToDoService";
-import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import {
+  listAssignee,
+  createTodo,
+  updateTodo
+} from "../services/ToDoService";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function TodoModal({ show, onClose, onSuccess, initialData, isEdit }) {
   const [assignee, setAssignee] = useState([]);
@@ -11,30 +15,31 @@ function TodoModal({ show, onClose, onSuccess, initialData, isEdit }) {
     scheduled_date: "",
     priority: "",
     assignee: "",
-    description: ""
+    description: "",
   });
 
   useEffect(() => {
-    const getAssignee = async () => {
+    const getAssigneeList = async () => {
       try {
-        const res = await ToDoService.listAssignee();
+        const res = await listAssignee();
         if (res?.data?.status === 200) {
           setAssignee(res.data.result ?? []);
         }
       } catch (err) {
-        toast.error("Error in assignee List:", err)
+        toast.error("Error loading assignee list");
       }
     };
-    getAssignee();
 
-    // Populate form data if editing, else reset for create
+    getAssigneeList();
+
+    // Load data in edit mode
     if (initialData && isEdit) {
       setFormData({
         title: initialData.title ?? "",
         scheduled_date: initialData.scheduled_date ?? "",
         priority: initialData.priority ?? "",
         assignee: initialData.user_id ?? "",
-        description: initialData.description ?? ""
+        description: initialData.description ?? "",
       });
     } else {
       setFormData({
@@ -42,7 +47,7 @@ function TodoModal({ show, onClose, onSuccess, initialData, isEdit }) {
         scheduled_date: "",
         priority: "",
         assignee: "",
-        description: ""
+        description: "",
       });
     }
   }, [initialData, isEdit]);
@@ -50,50 +55,56 @@ function TodoModal({ show, onClose, onSuccess, initialData, isEdit }) {
   const saveOrUpdateTodo = async (e) => {
     e.preventDefault();
     setSubmit(true);
+
     const { title, scheduled_date, priority, assignee, description } = formData;
 
     if (!title || !scheduled_date || !priority || !assignee) {
-      alert("Please fill all required fields.");
+      toast.error("Please fill all required fields.");
       setSubmit(false);
       return;
     }
 
     try {
       if (isEdit && initialData?.id) {
-        console.log(initialData)
-        const res = await ToDoService.updateTodo(initialData.id, {
-          title,
-          scheduled_date,
-          priority,
-          assignee: assignee,
-          description
-        });
-        if (res?.status === 200) {
-          toast.success("Todo updated successfully");
-          onSuccess(); // refresh list
-        } else {
-          toast.error("Failed to update todo");
-        }
-      } else {
-        const res = await ToDoService.createTodo({
+        // UPDATE TODO
+        const res = await updateTodo(initialData.id, {
           title,
           scheduled_date,
           priority,
           user_id: assignee,
-          description
+          description,
         });
+
+        if (res?.status === 200) {
+          toast.success("Todo updated successfully");
+          onSuccess();
+        } else {
+          toast.error("Failed to update todo");
+        }
+      } else {
+        // CREATE TODO
+        const res = await createTodo({
+          title,
+          scheduled_date,
+          priority,
+          user_id: assignee,
+          description,
+        });
+
         if (res?.status === 200) {
           toast.success("Todo created successfully");
-          onSuccess(); // refresh list
+          onSuccess();
         } else {
           toast.error("Failed to create todo");
         }
       }
+
       onClose();
     } catch (err) {
-      console.error("Error saving todo:", err);
+      console.error(err);
       toast.error("An error occurred");
     }
+
     setSubmit(false);
   };
 
@@ -102,17 +113,22 @@ function TodoModal({ show, onClose, onSuccess, initialData, isEdit }) {
   return (
     <>
       <div className="modal-backdrop fade show"></div>
-      <div className={`modal fade show d-block`} tabIndex="-1">
+
+      <div className="modal fade show d-block" tabIndex="-1">
         <div className="modal-dialog modal-lg">
           <div className="modal-content">
-            {/* Modal Header */}
+
+            {/* Header */}
             <div className="modal-header">
-              <h5 className="modal-title">{isEdit ? "Edit To Do" : "Create To Do"}</h5>
+              <h5 className="modal-title">
+                {isEdit ? "Edit To Do" : "Create To Do"}
+              </h5>
               <button type="button" className="close" onClick={onClose}>
                 <span>&times;</span>
               </button>
             </div>
 
+            {/* Body */}
             <div className="modal-body">
               <form onSubmit={saveOrUpdateTodo}>
                 <div className="row">
@@ -121,28 +137,38 @@ function TodoModal({ show, onClose, onSuccess, initialData, isEdit }) {
                     <input
                       type="text"
                       className="form-control"
-                      placeholder="Title"
                       value={formData.title}
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, title: e.target.value })
+                      }
                     />
                   </div>
+
                   <div className="form-group col-md-6">
                     <label>Scheduled Date<span className="text-danger">*</span></label>
                     <input
                       type="date"
                       className="form-control"
                       value={formData.scheduled_date}
-                      onChange={(e) => setFormData({ ...formData, scheduled_date: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          scheduled_date: e.target.value,
+                        })
+                      }
                     />
                   </div>
                 </div>
+
                 <div className="row">
                   <div className="form-group col-md-6">
                     <label>Priority<span className="text-danger">*</span></label>
                     <select
                       className="form-control"
                       value={formData.priority}
-                      onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, priority: e.target.value })
+                      }
                     >
                       <option value="">--Select--</option>
                       <option value="high">High</option>
@@ -150,37 +176,53 @@ function TodoModal({ show, onClose, onSuccess, initialData, isEdit }) {
                       <option value="low">Low</option>
                     </select>
                   </div>
+
                   <div className="form-group col-md-6">
                     <label>Assignee<span className="text-danger">*</span></label>
                     <select
                       className="form-control"
                       value={formData.assignee}
-                      onChange={(e) => setFormData({ ...formData, assignee: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, assignee: e.target.value })
+                      }
                     >
                       <option value="">--Select Assignee--</option>
                       {assignee.map((a) => (
-                        <option key={a.id} value={a.id}>{a.username}</option>
+                        <option key={a.id} value={a.id}>
+                          {a.username}
+                        </option>
                       ))}
                     </select>
                   </div>
                 </div>
+
                 <div className="form-group">
                   <label>Description</label>
                   <textarea
                     className="form-control"
                     value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        description: e.target.value,
+                      })
+                    }
                   ></textarea>
                 </div>
 
-                {/* Submit Button */}
+                {/* Footer */}
                 <div className="d-flex justify-content-end mt-3">
-                  <button type="submit" className="btn btn-primary" disabled={isSubmit}>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={isSubmit}
+                  >
                     {isSubmit ? "Saving..." : isEdit ? "Update" : "Save"}
                   </button>
                 </div>
               </form>
             </div>
+
           </div>
         </div>
       </div>
