@@ -1,6 +1,7 @@
 import React, { Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import TodoList from "./components/TodoList";
+import Login from "./components/Login";
 
 function App() {
   return (
@@ -8,6 +9,10 @@ function App() {
       <Routes>
         <Route
           path="/"
+          element={<Login />}
+        />
+        <Route
+          path="/todo/list"
           element={<TodoList />}
         />
       </Routes>
