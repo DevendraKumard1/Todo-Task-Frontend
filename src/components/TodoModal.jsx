@@ -70,7 +70,7 @@ function TodoModal({ show, onClose, onSuccess, initialData, isEdit }) {
       formData;
 
     // Validation
-    if (!title || !scheduled_date || !priority || !status || !assignee) {
+    if (!title || !scheduled_date || !priority || !assignee) {
       toast.error("All required fields must be filled");
       setSubmit(false);
       return;
@@ -106,7 +106,6 @@ function TodoModal({ show, onClose, onSuccess, initialData, isEdit }) {
           title,
           scheduled_date,
           priority,
-          status,
           user_id: assignee,
           description,
         });

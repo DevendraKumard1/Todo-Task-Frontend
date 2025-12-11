@@ -11,6 +11,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 import {dateFormat, statusBadge} from "./Utils";
+import { useNavigate } from "react-router-dom";
 
 function TodoList() {
   const [showModal, setShowModal] = useState(false);
@@ -32,6 +33,7 @@ function TodoList() {
   const [showFilters, setShowFilters] = useState(false);
   const [editTodo, setEditTodo] = useState(null);
   const [editMode, setEditMode] = useState(false);
+  const navigate = useNavigate();
 
   // Fetch Assignee
   useEffect(() => {
@@ -151,6 +153,13 @@ function TodoList() {
     handleCloseModal();
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("user_data");
+
+    navigate("/", { replace: true });
+  };
+
   return (
     <div className="container mt-5">
       <ToastContainer position="top-center" autoClose={2000} />
@@ -174,7 +183,7 @@ function TodoList() {
               Add To-Do
             </button>
 
-            <button className="btn btn-light btn-sm ml-2">
+            <button onClick={handleLogout} className="btn btn-light btn-sm ml-2">
               Logout
             </button>
           </div>
