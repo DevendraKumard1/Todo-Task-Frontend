@@ -2,6 +2,7 @@ import React, { Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import TodoList from "./components/TodoList";
 import Login from "./components/Login";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
@@ -13,7 +14,11 @@ function App() {
         />
         <Route
           path="/todo/list"
-          element={<TodoList />}
+          element={
+            <ProtectedRoute>
+              <TodoList />
+            </ProtectedRoute>
+          }
         />
       </Routes>
     </Suspense>
