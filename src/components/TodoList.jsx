@@ -90,7 +90,7 @@ function TodoList() {
     fetchTodos();
   }, [fetchTodos]);
 
-  const handleRefresh = () => fetchTodos();
+  fetchTodos();
 
   const totalPages = Math.ceil(total / limit);
 

@@ -41,7 +41,7 @@ function TodoModal({ show, onClose, onSuccess, initialData, isEdit }) {
         setFormData(defaultForm);
       }
     }
-  }, [show, initialData, isEdit]);
+  }, [show, initialData, isEdit, defaultForm]);
 
   // ----------------------------------------------------
   // Load assignee dropdown
