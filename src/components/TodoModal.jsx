@@ -6,18 +6,18 @@ import {
 } from "../services/ToDoService";
 import { toast } from "react-toastify";
 
+const defaultForm = {
+  title: "",
+  scheduled_date: "",
+  priority: "",
+  status: "",
+  assignee: "",
+  description: "",
+};
+
 function TodoModal({ show, onClose, onSuccess, initialData, isEdit }) {
   const [assignee, setAssignee] = useState([]);
   const [isSubmit, setSubmit] = useState(false);
-
-  const defaultForm = {
-    title: "",
-    scheduled_date: "",
-    priority: "",
-    status: "",
-    assignee: "",
-    description: "",
-  };
 
   const [formData, setFormData] = useState(defaultForm);
 
@@ -41,7 +41,7 @@ function TodoModal({ show, onClose, onSuccess, initialData, isEdit }) {
         setFormData(defaultForm);
       }
     }
-  }, [show, initialData, isEdit, defaultForm]);
+  }, [show, initialData, isEdit]);
 
   // ----------------------------------------------------
   // Load assignee dropdown
