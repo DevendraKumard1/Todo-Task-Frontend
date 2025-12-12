@@ -90,8 +90,6 @@ function TodoList() {
     fetchTodos();
   }, [fetchTodos]);
 
-  fetchTodos();
-
   const totalPages = Math.ceil(total / limit);
 
   const goToPage = (page) => {
