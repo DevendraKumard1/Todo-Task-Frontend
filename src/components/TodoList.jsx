@@ -12,6 +12,7 @@ import 'react-toastify/dist/ReactToastify.css';
 
 import {dateFormat, statusBadge} from "./Utils";
 import { useNavigate } from "react-router-dom";
+import Pagination from "./Pagination";
 
 function TodoList() {
   const [showModal, setShowModal] = useState(false);
@@ -90,25 +91,6 @@ function TodoList() {
     fetchTodos();
   }, [fetchTodos]);
 
-  const totalPages = Math.ceil(total / limit);
-
-  const goToPage = (page) => {
-    setCurrentPage(page);
-    setOffset((page - 1) * limit);
-  };
-
-  const handleNext = () => {
-    if (currentPage < totalPages) {
-      goToPage(currentPage + 1);
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentPage > 1) {
-      goToPage(currentPage - 1);
-    }
-  };
-
   // Reset Filters
   const handleReset = () => {
     setFilter({
@@ -160,7 +142,7 @@ function TodoList() {
 
   return (
     <div className="container mt-5">
-      <ToastContainer position="top-center" autoClose={2000} />
+      <ToastContainer position="top-center" autoClose={1000} />
 
       <div className="card shadow-sm">
 
@@ -297,7 +279,7 @@ function TodoList() {
                     key={todo.id}
                     style={{
                       textDecoration:
-                        todo.revoked || todo.status === "revoked"
+                        todo.completed || todo.status === "completed"
                           ? "line-through"
                           : "none",
                       opacity:
@@ -334,29 +316,13 @@ function TodoList() {
             </tbody>
           </table>
         </div>
-
-        {/* Pagination */}
-        <div className="card-footer d-flex justify-content-between">
-          <span>Page {currentPage} of {totalPages || 1}</span>
-
-          <div>
-            <button
-              className="btn btn-secondary btn-sm mr-2"
-              disabled={currentPage === 1}
-              onClick={handlePrevious}
-            >
-              Prev
-            </button>
-
-            <button
-              className="btn btn-secondary btn-sm"
-              disabled={currentPage === totalPages || totalPages === 0}
-              onClick={handleNext}
-            >
-              Next
-            </button>
-          </div>
-        </div>
+        <Pagination 
+          limit={limit}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+          total={total}
+          setOffset={setOffset}
+        />
       </div>
 
       {/* Modal */}
