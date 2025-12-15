@@ -4,13 +4,13 @@ import TodoModal from "./TodoModal";
 import {
   getTodos,
   listAssignee,
-  revokeTodo
+  revokeTodo   // ⬅️ UUID-based revoke
 } from "../services/ToDoService";
 
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-import {dateFormat, statusBadge} from "./Utils";
+import { dateFormat, statusBadge } from "./Utils";
 import { useNavigate } from "react-router-dom";
 import Pagination from "./Pagination";
 
@@ -52,7 +52,7 @@ function TodoList() {
     }
   };
 
-  // Fetch Todos (renamed to avoid conflict)
+  // Fetch Todos
   const fetchTodos = useCallback(async () => {
     try {
       const queryData = { ...filter, offset, limit };
@@ -65,7 +65,6 @@ function TodoList() {
       });
 
       const queryString = params.toString();
-
       const res = await getTodos(queryString);
 
       if (res?.data?.status === 200) {
@@ -104,10 +103,10 @@ function TodoList() {
     setCurrentPage(1);
   };
 
-  // Revoke
-  const handleRevoke = async (todoId) => {
+  // Revoke (UUID BASED ✅)
+  const handleRevoke = async (uuid) => {
     try {
-      await revokeTodo(todoId);
+      await revokeTodo(uuid);
       toast.success("Todo revoked successfully!");
       fetchTodos();
     } catch (err) {
@@ -136,7 +135,6 @@ function TodoList() {
   const handleLogout = () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("user_data");
-
     navigate("/", { replace: true });
   };
 
@@ -147,8 +145,10 @@ function TodoList() {
       <div className="card shadow-sm">
 
         {/* Header */}
-        <div className="card-header d-flex justify-content-between align-items-center"
-          style={{ backgroundColor: "#a7cef6", color: "rgba(0,0,0,1)" }}>
+        <div
+          className="card-header d-flex justify-content-between align-items-center"
+          style={{ backgroundColor: "#a7cef6", color: "rgba(0,0,0,1)" }}
+        >
           <p className="mb-0 font-weight-bold">To-Do Task List</p>
 
           <div className="d-flex">
@@ -168,6 +168,7 @@ function TodoList() {
             </button>
           </div>
         </div>
+
         <div className="p-3">
           <button
             className="btn btn-secondary btn-sm"
@@ -176,6 +177,8 @@ function TodoList() {
             {showFilters ? "Hide Filters" : "Show Filters"}
           </button>
         </div>
+
+        {/* Filters */}
         {showFilters && (
           <div className="row g-3 p-3">
             <div className="col-md-4">
@@ -189,6 +192,7 @@ function TodoList() {
                 }
               />
             </div>
+
             <div className="col-md-4">
               <label>Assignee</label>
               <select
@@ -204,6 +208,7 @@ function TodoList() {
                 ))}
               </select>
             </div>
+
             <div className="col-md-4">
               <label>Status</label>
               <select
@@ -221,6 +226,7 @@ function TodoList() {
                 <option value="revoked">Revoked</option>
               </select>
             </div>
+
             <div className="col-md-4">
               <label>Priority</label>
               <select
@@ -236,6 +242,7 @@ function TodoList() {
                 <option value="low">Low</option>
               </select>
             </div>
+
             <div className="col-md-4">
               <label>Scheduled Date</label>
               <input
@@ -247,6 +254,7 @@ function TodoList() {
                 }
               />
             </div>
+
             <div className="col-md-4 d-flex align-items-end">
               <button className="btn btn-secondary w-100" onClick={handleReset}>
                 Reset
@@ -254,6 +262,7 @@ function TodoList() {
             </div>
           </div>
         )}
+
         {/* Table */}
         <div className="table-responsive p-3">
           <table className="table table-bordered table-hover">
@@ -268,6 +277,7 @@ function TodoList() {
                 <th>Actions</th>
               </tr>
             </thead>
+
             <tbody>
               {todos.length === 0 ? (
                 <tr>
@@ -276,16 +286,12 @@ function TodoList() {
               ) : (
                 todos.map((todo, index) => (
                   <tr
-                    key={todo.id}
+                    key={todo.uuid}   
                     style={{
                       textDecoration:
-                        todo.completed || todo.status === "completed"
-                          ? "line-through"
-                          : "none",
+                        todo.status === "completed" ? "line-through" : "none",
                       opacity:
-                        todo.revoked || todo.status === "revoked"
-                          ? 0.5
-                          : 1
+                        todo.status === "revoked" ? 0.5 : 1
                     }}
                   >
                     <td>{offset + index + 1}</td>
@@ -298,14 +304,14 @@ function TodoList() {
                       <button
                         className="btn btn-sm btn-primary mr-2"
                         onClick={() => handleEdit(todo)}
-                        disabled={todo.revoked}
+                        disabled={todo.status === "revoked"}
                       >
                         <i className="bi bi-pencil"></i>
                       </button>
 
                       <button
                         className="btn btn-sm btn-danger"
-                        onClick={() => handleRevoke(todo.id)}
+                        onClick={() => handleRevoke(todo.uuid)}   
                       >
                         <i className="bi bi-x-circle"></i>
                       </button>
@@ -316,7 +322,8 @@ function TodoList() {
             </tbody>
           </table>
         </div>
-        <Pagination 
+
+        <Pagination
           limit={limit}
           currentPage={currentPage}
           setCurrentPage={setCurrentPage}

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import {
   listAssignee,
   createTodo,
-  updateTodo,
+  updateTodo,   // UUID based update
 } from "../services/ToDoService";
 import { toast } from "react-toastify";
 
@@ -18,7 +18,6 @@ const defaultForm = {
 function TodoModal({ show, onClose, onSuccess, initialData, isEdit }) {
   const [assignee, setAssignee] = useState([]);
   const [isSubmit, setSubmit] = useState(false);
-
   const [formData, setFormData] = useState(defaultForm);
 
   // ----------------------------------------------------
@@ -60,7 +59,7 @@ function TodoModal({ show, onClose, onSuccess, initialData, isEdit }) {
   };
 
   // ----------------------------------------------------
-  // Create or Update Todo
+  // Create or Update Todo (UUID BASED UPDATE ✅)
   // ----------------------------------------------------
   const saveOrUpdateTodo = async (e) => {
     e.preventDefault();
@@ -77,11 +76,11 @@ function TodoModal({ show, onClose, onSuccess, initialData, isEdit }) {
     }
 
     try {
-      if (isEdit && initialData?.id) {
+      if (isEdit && initialData?.uuid) {
         // ----------------------------------------------------
-        // UPDATE TODO
+        // UPDATE TODO (UUID)
         // ----------------------------------------------------
-        const res = await updateTodo(initialData.id, {
+        const res = await updateTodo(initialData.uuid, {
           title,
           scheduled_date,
           priority,
@@ -201,6 +200,7 @@ function TodoModal({ show, onClose, onSuccess, initialData, isEdit }) {
                       <option value="low">Low</option>
                     </select>
                   </div>
+
                   {initialData && isEdit && (
                     <div className="form-group col-md-6">
                       <label>Status<span className="text-danger">*</span></label>
@@ -239,6 +239,7 @@ function TodoModal({ show, onClose, onSuccess, initialData, isEdit }) {
                     </select>
                   </div>
                 </div>
+
                 <div className="row">
                   <div className="form-group col-md-12">
                     <label>Description</label>
